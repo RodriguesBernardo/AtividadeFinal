@@ -1,0 +1,138 @@
+services:
+  # =======================================================
+  # CAMADA DE DADOS
+  # =======================================================
+
+  # 1. Banco Transacional (OLTP) - Onde as notas nascem
+  db_transacional:
+    image: postgres:15-alpine
+    container_name: nfe_postgres_oltp
+    restart: always
+    ports:
+      - "5435:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_password
+      POSTGRES_DB: nfe_db
+      TZ: America/Sao_Paulo
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+      - ./nfe_simulador/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d nfe_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # 2. Banco Analítico (OLAP) - Onde o Next.js lê
+  db_analitico:
+    image: timescale/timescaledb:latest-pg15
+    container_name: nfe_timescale_olap
+    restart: always
+    ports:
+      - "6543:5432"
+    environment:
+      POSTGRES_USER: analytics_user
+      POSTGRES_PASSWORD: analytics_password
+      POSTGRES_DB: analytics_db
+      TZ: America/Sao_Paulo
+    volumes:
+      - ./data/timescale:/var/lib/postgresql/data
+      - ./timescale_init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U analytics_user -d analytics_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # =======================================================
+  # CAMADA DE INGESTÃO (ESCRITA NO TRANSACT)
+  # =======================================================
+
+  # 3. Simulador Go (Gera notas do histórico e a cada 5s)
+  simulador:
+    build: ./nfe_simulador
+    container_name: nfe_simulador_go
+    restart: always
+    environment:
+      DATABASE_URL: "postgres://postgres:postgres_password@db_transacional:5432/nfe_db?sslmode=disable"
+      TZ: America/Sao_Paulo
+    depends_on:
+      db_transacional:
+        condition: service_healthy
+
+  # 4. Integrador FakeStore Go (Busca o catálogo do ERP externo e gera notas a cada 30s)
+  erp_integrador:
+    build: ./erp-integrador
+    container_name: nfe_erp_worker
+    restart: always
+    environment:
+      DATABASE_URL: "postgres://postgres:postgres_password@db_transacional:5432/nfe_db?sslmode=disable"
+      TZ: America/Sao_Paulo
+    depends_on:
+      db_transacional:
+        condition: service_healthy
+
+  # =======================================================
+  # CAMADA DE ENGENHARIA DE DADOS (ETL)
+  # =======================================================
+
+  # 5.1 Prefect Server (A Interface Gráfica e a API)
+  prefect_server:
+    image: prefecthq/prefect:3-python3.11
+    container_name: nfe_prefect_server
+    restart: always
+    environment:
+      TZ: America/Sao_Paulo
+      PREFECT_API_DATABASE_CONNECTION_URL: postgresql+asyncpg://postgres:postgres_password@db_transacional:5432/nfe_db
+    ports:
+      - "4200:4200"
+    command: prefect server start --host 0.0.0.0
+    depends_on:
+      db_transacional:
+        condition: service_healthy
+
+  # 5.2 Prefect Worker (O operário que roda o código Python)
+  prefect_worker:
+    build: ./prefect
+    container_name: nfe_prefect_pipeline
+    restart: always
+    environment:
+      DB_ORIGEM: "dbname='nfe_db' user='postgres' password='postgres_password' host='db_transacional' port='5432'"
+      DB_DESTINO: "dbname='analytics_db' user='analytics_user' password='analytics_password' host='db_analitico' port='5432'"
+      PREFECT_API_URL: "http://prefect_server:4200/api"
+      TZ: America/Sao_Paulo
+    depends_on:
+      prefect_server:
+        condition: service_started
+      db_transacional:
+        condition: service_healthy
+      db_analitico:
+        condition: service_healthy
+
+  # =======================================================
+  # CAMADA DE APRESENTAÇÃO (FRONTEND)
+  # =======================================================
+
+  # 6. Next.js Dashboard
+  frontend:
+    build: ./frontend
+    container_name: nfe_nextjs_dashboard
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: "postgres://analytics_user:analytics_password@db_analitico:5432/analytics_db?sslmode=disable"
+      TZ: America/Sao_Paulo
+    depends_on:
+      db_analitico:
+        condition: service_healthy
+
+# =======================================================
+# VOLUMES
+# =======================================================
+volumes:
+  postgres_data:
+  timescale_data:

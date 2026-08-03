@@ -1,0 +1,19 @@
+# Dependências do Node/Next.js
+**/node_modules/
+# Pastas de build do Next.js
+**/.next/
+**/.out/
+
+# Dados locais do Docker (os volumes que guardam o banco de dados no seu disco)
+**/timescale_data/
+**/postgres_data/
+data
+
+# Arquivos de ambiente e senhas secretas (se você usar arquivos .env)
+.env
+.env.local
+.env*.local
+
+# Arquivos do sistema operacional
+.DS_Store
+Thumbs.db

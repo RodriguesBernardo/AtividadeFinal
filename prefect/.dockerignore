@@ -1,0 +1,15 @@
+# Ignora o próprio Dockerfile
+Dockerfile
+
+# Ignora arquivos de cache do Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignora ambientes virtuais (caso você crie um localmente)
+.venv/
+venv/
+env/
+
+# Ignora variáveis de ambiente locais
+.env
