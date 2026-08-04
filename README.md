@@ -71,8 +71,6 @@ Esse comando monta e sobe todos os serviços definidos em [docker-compose.yml](d
 
 - Dashboard: http://localhost:3000
 - Prefect: http://localhost:4200
-- PostgreSQL transacional: localhost:5435
-- TimescaleDB analítico: localhost:6543
 
 ## Configuração
 
