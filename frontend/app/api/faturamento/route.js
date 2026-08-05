@@ -15,11 +15,14 @@ export async function GET(request) {
     let condicaoTempo = "";
 
     if (filtro === "hora") {
-      condicaoTempo = ">= (SELECT COALESCE(MAX(created_at), NOW()) FROM nfe_fatos) - INTERVAL '1 hour'";
+      condicaoTempo =
+        ">= (SELECT COALESCE(MAX(created_at), NOW()) FROM nfe_fatos) - INTERVAL '1 hour'";
     } else if (filtro === "mes") {
-      condicaoTempo = ">= DATE_TRUNC('month', (SELECT COALESCE(MAX(created_at), NOW()) FROM nfe_fatos))";
+      condicaoTempo =
+        ">= DATE_TRUNC('month', (SELECT COALESCE(MAX(created_at), NOW()) FROM nfe_fatos))";
     } else {
-      condicaoTempo = ">= DATE_TRUNC('day', (SELECT COALESCE(MAX(created_at), NOW()) FROM nfe_fatos))";
+      condicaoTempo =
+        ">= DATE_TRUNC('day', (SELECT COALESCE(MAX(created_at), NOW()) FROM nfe_fatos))";
     }
 
     // Query robusta usando CTEs para buscar ambos os faturamentos em uma única viagem ao banco
@@ -32,17 +35,22 @@ export async function GET(request) {
           AND created_at ${condicaoTempo}
       ),
       faturamento_exterior AS (
-        SELECT COALESCE(SUM(f.valor_da_nota * c.valor_em_reais), 0) AS total_exterior
+        SELECT COALESCE(SUM(f.valor_da_nota * (
+            SELECT valor_em_reais 
+            FROM cotacoes_diarias 
+            WHERE moeda = 'USD' 
+              AND data_cotacao <= DATE(f.created_at) 
+            ORDER BY data_cotacao DESC 
+            LIMIT 1
+        )), 0) AS total_exterior
         FROM nfe_fatos f
-        INNER JOIN cotacoes_diarias c 
-          ON DATE(f.created_at) = c.data_cotacao AND c.moeda = 'USD'
         WHERE f.status_sefaz = 'A' 
           AND f.uf_cliente = 'EX' 
           AND f.created_at ${condicaoTempo}
       )
       SELECT 
         p.total AS total_acumulado, 
-        e.total_exterior 
+        e.total_exterior  AS total_exterior
       FROM faturamento_principal p, faturamento_exterior e;
     `;
 

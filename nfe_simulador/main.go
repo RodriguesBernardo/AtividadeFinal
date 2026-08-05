@@ -50,6 +50,6 @@ func main() {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		generator.GerarEGravarNota(db, time.Now().UTC())
+		generator.GerarEGravarNota(db, time.Now())
 	}
 }

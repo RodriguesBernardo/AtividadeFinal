@@ -18,7 +18,7 @@ func ExecutarHistorico(db *gorm.DB) {
 		return
 	}
 
-	hoje := time.Now().UTC()
+	hoje := time.Now()
 	dataInicio := hoje.AddDate(0, 0, -65)
 
 	for d := dataInicio; d.Before(hoje); d = d.AddDate(0, 0, 1) {
