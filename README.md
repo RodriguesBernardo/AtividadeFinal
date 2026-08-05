@@ -12,7 +12,8 @@ O projeto é composto por:
 - uma integração em Go que busca dados na FakeStore e insere notas no mesmo fluxo, ampliando as fontes de dados;
 - um pipeline de ingestão e consolidação com Prefect;
 - um banco analítico TimescaleDB para consultas rápidas e agregações;
-- um frontend em Next.js para visualizar faturamento, histórico e comparação por mercado.
+- um frontend em Next.js para visualizar faturamento, histórico e comparação por mercado;
+- uma rotina automática que varre notas pendentes a cada 2 minutos e dispara e-mails de cobrança via Resend.
 
 ## Por que escolhemos cada tecnologia
 
@@ -82,6 +83,7 @@ As variáveis de ambiente já estão definidas no compose para os serviços prin
   - DB_ORIGEM
   - DB_DESTINO
   - PREFECT_API_URL
+  - Lê também as credenciais de e-mail (`RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_TO`) a partir do arquivo `.env` injetado pelo Docker (veja `.env.example`).
 - frontend:
   - DATABASE_URL
 
@@ -131,6 +133,7 @@ Os fluxos estão definidos em [prefect/dags](prefect/dags):
 - ingestao.py: pipeline de ingestão para o TimescaleDB.
 - cotacoes_diarias.py: carga de cotações diárias de moedas.
 - faturamento_diario_mercado.py: consolidação diária de faturamento por mercado.
+- cobranca_notas.py: varredura de notas não pagas (`nota_ja_paga = 'N'`) e envio de e-mail de cobrança. Roda automaticamente a cada 2 minutos. Após cobrar não envia cobrança da mesma nota por 10 minutos, a informação de última cobrança está na mesma tabela.
 
 O ponto de entrada do worker é [prefect/main.py](prefect/main.py), que também executa uma carga inicial imediata de cotações e consolidação antes de registrar os agendamentos.
 
