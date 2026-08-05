@@ -74,7 +74,7 @@ func GerarEGravarNota(db *gorm.DB, dataCriacao time.Time) {
 			CodItem:        produto.Codigo,
 			Descricao:      produto.Descricao,
 			ValorItemTotal: valorItem,
-			Quantidade:     rand.Intn(50) + 1,
+			Quantidade:     rand.Intn(20) + 1,
 		}
 		valorTotalNota += valorItem
 	}

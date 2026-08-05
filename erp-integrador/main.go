@@ -23,7 +23,7 @@ import (
 const (
 	fakeStoreProdutosURL = "https://fakestoreapi.com/products"
 	serieOrigemFakeStore = "9"
-	diasHistorico        = 65
+	diasHistorico        = 10
 	intervaloTempoReal   = 30 * time.Second
 )
 
@@ -35,15 +35,16 @@ type FakeProduct struct {
 }
 
 type Nota struct {
-	ID              int64     `gorm:"primaryKey;column:id;autoIncrement"`
-	SerieNF         string    `gorm:"column:serie_nf;type:char(1);not null"`
-	SomaFaturamento bool      `gorm:"column:soma_faturamento;not null"`
-	Cliente         string    `gorm:"column:cliente;type:char(18);not null"`
-	UfCliente       string    `gorm:"column:uf_cliente;type:char(2);not null"`
-	CreatedAt       time.Time `gorm:"column:created_at;not null"`
-	StatusSefaz     string    `gorm:"column:status_sefaz;type:char(1);not null"`
-	NotaJaPaga      string    `gorm:"column:nota_ja_paga;type:char(1);not null"`
-	ValorDaNota     float64   `gorm:"column:valor_da_nota;type:decimal(12,2);not null"`
+	ID                int64      `gorm:"primaryKey;column:id;autoIncrement"`
+	SerieNF           string     `gorm:"column:serie_nf;type:char(1);not null"`
+	SomaFaturamento   bool       `gorm:"column:soma_faturamento;not null"`
+	Cliente           string     `gorm:"column:cliente;type:char(18);not null"`
+	UfCliente         string     `gorm:"column:uf_cliente;type:char(2);not null"`
+	CreatedAt         time.Time  `gorm:"column:created_at;not null"`
+	StatusSefaz       string     `gorm:"column:status_sefaz;type:char(1);not null"`
+	NotaJaPaga        string     `gorm:"column:nota_ja_paga;type:char(1);not null"`
+	ValorDaNota       float64    `gorm:"column:valor_da_nota;type:decimal(12,2);not null"`
+	DataEnvioCobranca *time.Time `gorm:"column:data_envio_cobranca"`
 
 	Itens []Item `gorm:"foreignKey:IdFkNota;references:ID;constraint:OnDelete:CASCADE"`
 }
@@ -64,9 +65,9 @@ func (Item) TableName() string { return "itens" }
 
 // Nomes curtos para virar a "categoria" extraída pelo ETL (que pega a 2ª palavra da descrição)
 var categoriasFakeStore = map[string]string{
-	"electronics":     "Eletronicos",
-	"jewelery":        "Joias",
-	"men's clothing":  "ModaMasculina",
+	"electronics":      "Eletronicos",
+	"jewelery":         "Joias",
+	"men's clothing":   "ModaMasculina",
 	"women's clothing": "ModaFeminina",
 }
 
@@ -106,7 +107,7 @@ func main() {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		gerarEGravarNotaFakeStore(db, produtos, time.Now().UTC())
+		gerarEGravarNotaFakeStore(db, produtos, time.Now())
 	}
 }
 
@@ -118,8 +119,20 @@ func buscarCatalogoComRetry() []FakeProduct {
 		if err == nil && resp.StatusCode == http.StatusOK {
 			defer resp.Body.Close()
 			var produtos []FakeProduct
+
 			if json.NewDecoder(resp.Body).Decode(&produtos) == nil && len(produtos) > 0 {
-				return produtos
+
+				var produtosFiltrados []FakeProduct
+
+				for _, p := range produtos {
+					if p.Price <= 20.00 {
+						produtosFiltrados = append(produtosFiltrados, p)
+					}
+				}
+
+				if len(produtosFiltrados) > 0 {
+					return produtosFiltrados
+				}
 			}
 		}
 		if resp != nil {
@@ -129,14 +142,14 @@ func buscarCatalogoComRetry() []FakeProduct {
 	}
 }
 
-// seedarHistoricoFakeStore popula ~65 dias de pedidos FakeStore caso ainda não existam
+// seedarHistoricoFakeStore popula ~10 dias de pedidos FakeStore caso ainda não existam
 func seedarHistoricoFakeStore(db *gorm.DB, produtos []FakeProduct) {
 	var count int64
 	if err := db.Model(&Nota{}).Where("serie_nf = ?", serieOrigemFakeStore).Count(&count).Error; err != nil || count > 0 {
 		return
 	}
 
-	hoje := time.Now().UTC()
+	hoje := time.Now()
 	dataInicio := hoje.AddDate(0, 0, -diasHistorico)
 
 	for d := dataInicio; d.Before(hoje); d = d.AddDate(0, 0, 1) {
@@ -145,7 +158,7 @@ func seedarHistoricoFakeStore(db *gorm.DB, produtos []FakeProduct) {
 			continue
 		}
 
-		qtdPedidosNoDia := rand.Intn(51) + 10 // 10 a 60 pedidos/dia
+		qtdPedidosNoDia := rand.Intn(21) + 10 // 10 a 30 pedidos/dia
 		for i := 0; i < qtdPedidosNoDia; i++ {
 			horaAleatoria := rand.Intn(24)
 			minutoAleatorio := rand.Intn(60)
@@ -167,11 +180,11 @@ func gerarEGravarNotaFakeStore(db *gorm.DB, produtos []FakeProduct, dataCriacao 
 	pagamentos := []string{"P", "M", "N"}
 	notaJaPaga := pagamentos[rand.Intn(len(pagamentos))]
 
-	qtdItens := rand.Intn(5) + 1
+	qtdItens := rand.Intn(2) + 1
 	itens := make([]Item, qtdItens)
 	var valorTotalNota float64
 
-	for i := 0; i < qtdItens; i++ {
+	for i := range qtdItens {
 		produto := produtos[rand.Intn(len(produtos))]
 		quantidade := rand.Intn(3) + 1
 		valorItem := arredondar(produto.Price * float64(quantidade))
