@@ -8,7 +8,8 @@ CREATE TABLE IF NOT EXISTS notas (
     created_at TIMESTAMP NOT NULL,
     status_sefaz CHAR(1) NOT NULL,
     nota_ja_paga CHAR(1) NOT NULL,
-    valor_da_nota DECIMAL(12, 2) NOT NULL
+    valor_da_nota DECIMAL(12, 2) NOT NULL,
+    data_envio_cobranca TIMESTAMP
 );
 
 -- Criação da tabela de Itens

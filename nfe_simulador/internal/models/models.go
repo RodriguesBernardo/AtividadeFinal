@@ -14,6 +14,7 @@ type Nota struct {
 	StatusSefaz     string    `gorm:"column:status_sefaz;type:char(1);not null"`
 	NotaJaPaga      string    `gorm:"column:nota_ja_paga;type:char(1);not null"`
 	ValorDaNota     float64   `gorm:"column:valor_da_nota;type:decimal(12,2);not null"`
+	DataEnvioCobranca *time.Time `gorm:"column:data_envio_cobranca"`
 
 	// Relationship
 	Itens []Item `gorm:"foreignKey:IdFkNota;references:ID;constraint:OnDelete:CASCADE"`

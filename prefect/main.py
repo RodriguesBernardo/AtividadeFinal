@@ -5,6 +5,7 @@ from prefect.schedules import Cron
 from dags.ingestao import etl_flow
 from dags.cotacoes_diarias import fluxo_cotacoes_moedas
 from dags.faturamento_diario_mercado import fluxo_faturamento_diario_mercado
+from dags.cobranca_notas import fluxo_cobranca_pagamento_nota
 
 if __name__ == "__main__":
     # =========================================================================
@@ -42,7 +43,12 @@ if __name__ == "__main__":
         )
     )
 
+    cobranca_pagamento_nota_deploy = fluxo_cobranca_pagamento_nota.to_deployment(
+        name="agendamento-cobranca-pagamento-nota",
+        interval=120
+    )
+
     print("⏰ Iniciando o servidor centralizado de DAGs do Prefect...")
     
     # Executa todas as DAGs no mesmo pool de memória
-    serve(ingestao_deploy, cotacoes_deploy, faturamento_mercado_deploy)
+    serve(ingestao_deploy, cotacoes_deploy, faturamento_mercado_deploy, cobranca_pagamento_nota_deploy)
