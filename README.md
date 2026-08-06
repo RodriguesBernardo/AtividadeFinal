@@ -57,6 +57,7 @@ Certifique-se de ter instalado no ambiente:
 
 - Docker
 - Docker Compose
+- Caso deseje enviar e-mail de cobrança, será necessário uma API Key gratuita da plataforma Resend - https://resend.com/
 
 ## Instalação e execução
 
