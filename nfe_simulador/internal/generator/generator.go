@@ -53,7 +53,7 @@ func GerarEGravarNota(db *gorm.DB, dataCriacao time.Time) {
 	cliente := gerarCNPJFormatado()
 	ufCliente := estadosBrasileiros[rand.Intn(len(estadosBrasileiros))]
 
-	pagamentos := []string{"P", "M", "N"}
+	pagamentos := []string{"P", "N"}
 	notaJaPaga := pagamentos[rand.Intn(len(pagamentos))]
 
 	qtdItens := rand.Intn(48) + 1
