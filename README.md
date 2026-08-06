@@ -1,5 +1,5 @@
 # Link para o vídeo de apresentação
-[Vídeo de aprensetação](https://drive.google.com/file/d/1AjXvHVzjOSKRcFwkRXiGuOrkicbEBciR/view?usp=sharing)
+[Vídeo de apresentação](https://drive.google.com/file/d/1AjXvHVzjOSKRcFwkRXiGuOrkicbEBciR/view?usp=sharing)
 
 # Dashboard de Faturamento Analítico com NF-e
 
