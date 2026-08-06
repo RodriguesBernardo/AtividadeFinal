@@ -177,7 +177,7 @@ func gerarEGravarNotaFakeStore(db *gorm.DB, produtos []FakeProduct, dataCriacao 
 	if rand.Float32() < 0.95 {
 		statusSefaz = "A"
 	}
-	pagamentos := []string{"P", "M", "N"}
+	pagamentos := []string{"P", "N"}
 	notaJaPaga := pagamentos[rand.Intn(len(pagamentos))]
 
 	qtdItens := rand.Intn(2) + 1
