@@ -61,7 +61,9 @@ Certifique-se de ter instalado no ambiente:
 
 ## Instalação e execução
 
-Na raiz do projeto, execute:
+O primeiro passo é criar um arquivo .env na raiz do projeto, seguindo as configurações do .env.example, caso não deseje o envio de e-mails apenas criar o arquivo e deixar igual ao exemplo.
+
+Após isso ca raiz do projeto, execute:
 
 ```bash
 docker-compose up -d --build
