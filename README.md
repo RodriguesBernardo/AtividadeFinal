@@ -1,3 +1,6 @@
+# Link para o vídeo de apresentação
+[Vídeo de aprensetação](https://drive.google.com/file/d/1AjXvHVzjOSKRcFwkRXiGuOrkicbEBciR/view?usp=sharing)
+
 # Dashboard de Faturamento Analítico com NF-e
 
 Este repositório organiza uma solução de dados em containers para gerar, processar e visualizar dados de Notas Fiscais Eletrônicas (NF-e) em tempo real. A arquitetura combina um simulador em Go, um banco transacional PostgreSQL, um pipeline de ETL orquestrado pelo Prefect, um banco analítico TimescaleDB, integrações em Go e um painel web em Next.js.
